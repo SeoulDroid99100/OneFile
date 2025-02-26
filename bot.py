@@ -133,25 +133,19 @@ async def message_handler_wrapper(handler_func):
         return await handler_func(client, update, *args)
     return wrapper
 
-    if not all(required_config_vars):
-        raise EnvironmentError("Missing required configuration values (API_ID, API_HASH, BOT_TOKEN, POSTGRES_URI)")
 
-    # Logging Configuration
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
 
 # ---------------------------
 # 9. Client Initialization
 # ---------------------------
 
-# Define the path for the session file
-session_file_path = Path(__file__).parent / "pyrogram_session.session"
+# Create the session directory if it doesn't exist
+session_dir = Path(Config.SESSION_DIR)
+session_dir.mkdir(parents=True, exist_ok=True)
+session_file_path = session_dir / "pyrogram_session.session"
 
-# Initialize the Pyrogram Client with the session file path
 app = Client(
-    name=session_file_path.stem,  # Use the stem (name without extension) for the session
+    name=str(session_file_path),  # Pass the full path as a string
     api_id=Config.API_ID,
     api_hash=Config.API_HASH,
     bot_token=Config.BOT_TOKEN,
