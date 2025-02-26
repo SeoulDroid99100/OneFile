@@ -133,21 +133,25 @@ async def message_handler_wrapper(handler_func):
         return await handler_func(client, update, *args)
     return wrapper
 
+    if not all(required_config_vars):
+        raise EnvironmentError("Missing required configuration values (API_ID, API_HASH, BOT_TOKEN, POSTGRES_URI)")
+
+    # Logging Configuration
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
 # ---------------------------
 # 9. Client Initialization
 # ---------------------------
 
-# Use an absolute path from the environment variable
-session_dir = Path(Config.SESSION_DIR)
-session_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
-
 app = Client(
-    name=str(session_dir / "pg_bot"),  # Use the absolute path
+    name="pg_bot",  # Use a fixed name
     api_id=Config.API_ID,
     api_hash=Config.API_HASH,
     bot_token=Config.BOT_TOKEN,
-    parse_mode=ParseMode.MARKDOWN,
-    workdir=str(session_dir) # ADD WORKDIR here
+    parse_mode=ParseMode.MARKDOWN
 )
 
 # ---------------------------
@@ -161,21 +165,21 @@ async def startup_event():
         max_size=Config.POOL_SIZE
     )
     async with AppState.db_pool.acquire() as conn:
-      await conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id BIGINT PRIMARY KEY,
                 username TEXT,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             )
-      """)
+        """)
     logging.info("Database pool initialized and tables checked/created.")
 
 # ---------------------------
 # 11. Handler Registration
 # ---------------------------
 async def register_handlers():
-  app.add_handler(MessageHandler(await message_handler_wrapper(handle_start), filters.command("start") & filters.private))
-  app.add_handler(CallbackQueryHandler(await message_handler_wrapper(handle_stats), filters.regex("^stats$")))
+    app.add_handler(MessageHandler(await message_handler_wrapper(handle_start), filters.command("start") & filters.private))
+    app.add_handler(CallbackQueryHandler(await message_handler_wrapper(handle_stats), filters.regex("^stats$")))
 
 # ---------------------------
 # 12. Main Execution
