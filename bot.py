@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 
 # Standard Library
 from contextlib import contextmanager  # Not actually used, but no harm.
-
+import asyncio
 # Third-Party
 from pyrogram import Client, filters, idle  # Correct Pyrogram imports
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton  # Correct type imports
