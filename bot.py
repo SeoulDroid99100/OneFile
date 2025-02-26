@@ -14,7 +14,8 @@ import subprocess
 REQUIRED_PACKAGES = [
     ('pyrogram[fast]', '2.0.106'),
     ('asyncpg', '0.27.0'),
-    ('python-dotenv', '1.0.0')
+    ('python-dotenv', '1.0.0'),
+    ('telebot')
 ]
 
 def ensure_dependencies():
