@@ -146,12 +146,15 @@ async def message_handler_wrapper(handler_func):
 # 9. Client Initialization
 # ---------------------------
 
+# Define the path for the session file
+session_file_path = Path(__file__).parent / "pyrogram_session.session"
+
+# Initialize the Pyrogram Client with the session file path
 app = Client(
-    name="bot",  # Use a fixed name
+    name=session_file_path.stem,  # Use the stem (name without extension) for the session
     api_id=Config.API_ID,
     api_hash=Config.API_HASH,
     bot_token=Config.BOT_TOKEN,
-    parse_mode=ParseMode.MARKDOWN
 )
 
 # ---------------------------
