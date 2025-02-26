@@ -1,21 +1,70 @@
 # -*- coding: utf-8 -*-
 """
-Pyrogram Bot with PostgreSQL Integration
-Version: 2.0
+Pyrogram Bot with Auto Dependency Management
+Version: 3.1
 Author: Your Name
-Description: Maintainable Telegram bot with structured database integration
 """
 
 # ---------------------------
-# 1. Type Hints & Metadata
+# 0. Dependency Management
 # ---------------------------
-from __future__ import annotations
+import sys
+import subprocess
+
+REQUIRED_PACKAGES = [
+    ('pyrogram[fast]', '2.0.0'),
+    ('asyncpg', '0.27.0'),
+    ('python-dotenv', '1.0.0')
+]
+
+def ensure_dependencies():
+    try:
+        from pyrogram import __version__ as pyro_ver
+        from asyncpg import __version__ as pg_ver
+        from importlib.metadata import version
+        
+        installed = {
+            'pyrogram[fast]': version('pyrogram'),
+            'asyncpg': version('asyncpg'),
+            'python-dotenv': version('python-dotenv')
+        }
+        
+        missing = []
+        for pkg, req_ver in REQUIRED_PACKAGES:
+            if installed[pkg] < req_ver:
+                missing.append(f"{pkg}>={req_ver}")
+        
+        if missing:
+            raise ImportError()
+            
+    except ImportError:
+        print("Installing missing dependencies...")
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "--disable-pip-version-check",
+            "--no-warn-script-location",
+            *[f"{pkg}>={ver}" for pkg, ver in REQUIRED_PACKAGES]
+        ])
+        print("\nDependencies installed. Please restart the application.")
+        sys.exit(0)
+
+ensure_dependencies()
+
+# ---------------------------
+# 1. Core Imports
+# ---------------------------
 import os
 import logging
 import asyncpg
-from typing import Any, Optional, Callable
-from dataclasses import dataclass
+from typing import Any, Optional
+from datetime import datetime
 
+# Pyrogram Components
+from pyrogram import Client, filters, idle
+from pyrogram.types import Message
+from pyrogram.handlers import MessageHandler
+
+# Rest of your application code follows the previous structure...
 # ---------------------------
 # 2. Structured Imports
 # ---------------------------
