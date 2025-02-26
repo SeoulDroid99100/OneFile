@@ -14,7 +14,7 @@ from typing import Any, Optional, Callable, List
 from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path  # Import Path
-
+import nest_asyncio
 # Standard Library
 from contextlib import contextmanager
 
@@ -25,7 +25,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.enums import ParseMode
 import asyncio
 import os
-
+nest_asyncio.apply()
 # ---------------------------
 # 2. Configuration Management
 # ---------------------------
@@ -197,7 +197,6 @@ if __name__ == "__main__":
         await register_handlers()
         try:
             await app.run()
-            await idle()
         except Exception as e:
             logging.exception("An error occurred during bot startup:")
 
