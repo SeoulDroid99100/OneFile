@@ -150,6 +150,7 @@ app = Client(
     bot_token=Config.BOT_TOKEN,
 )
 
+app.run()
 # ---------------------------
 # 10. Lifecycle Management
 # ---------------------------
@@ -196,8 +197,7 @@ if __name__ == "__main__":
         await startup_event()
         await register_handlers()
         try:
-            await app.start()
-            idle()
+            pass
         except Exception as e:
             logging.exception("An error occurred during bot startup:")
 
