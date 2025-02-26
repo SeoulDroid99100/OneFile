@@ -147,7 +147,7 @@ async def message_handler_wrapper(handler_func):
 # ---------------------------
 
 app = Client(
-    name="pg_bot",  # Use a fixed name
+    name="bot",  # Use a fixed name
     api_id=Config.API_ID,
     api_hash=Config.API_HASH,
     bot_token=Config.BOT_TOKEN,
