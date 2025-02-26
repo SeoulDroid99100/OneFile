@@ -1,16 +1,4 @@
- - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    async def main():
-        await startup_event()
-        await register_handlers()
-        try:
-            await app.start()
-            await idle()
-        except Exception as e:
-            logging.exception("An error occurred during bot startup:")
-
-    asyncio.ru# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Pyrogram Bot  (No Auto Dependency Management)
 Version: 3.11
@@ -44,9 +32,9 @@ import os
 @dataclass(frozen=True)
 class Config:
     API_ID: int = int(os.environ["API_ID"])
-    API_HASH: str = os.environ["API_HASH"]
-    BOT_TOKEN: str = os.environ["BOT_TOKEN"]
-    POSTGRES_URI: str = os.environ["POSTGRES_URI"]
+    API_HASH: str = os.environ["API_HASH"])
+    BOT_TOKEN: str = os.environ["BOT_TOKEN"])
+    POSTGRES_URI: str = os.environ["POSTGRES_URI"])
     POOL_SIZE: int = 15
     ADMINS: List[int] = field(default_factory=lambda: [6656275515])
     SESSION_DIR: str = os.environ.get("SESSION_DIR", "/app/sessions") # Get session dir from env, default to /app/sessions
