@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Pyrogram Bot with Auto Dependency Management
-Version: 3.1
+Version: 3.7
 Author: Your Name
 """
 
@@ -12,7 +12,7 @@ import sys
 import subprocess
 
 REQUIRED_PACKAGES = [
-    ('pyrogram[fast]', '2.0.0'),
+    ('pyrogram[fast]', '2.0.106'),
     ('asyncpg', '0.27.0'),
     ('python-dotenv', '1.0.0')
 ]
@@ -22,21 +22,21 @@ def ensure_dependencies():
         from pyrogram import __version__ as pyro_ver
         from asyncpg import __version__ as pg_ver
         from importlib.metadata import version
-        
+
         installed = {
             'pyrogram[fast]': version('pyrogram'),
             'asyncpg': version('asyncpg'),
             'python-dotenv': version('python-dotenv')
         }
-        
+
         missing = []
         for pkg, req_ver in REQUIRED_PACKAGES:
             if installed[pkg] < req_ver:
                 missing.append(f"{pkg}>={req_ver}")
-        
+
         if missing:
             raise ImportError()
-            
+
     except ImportError:
         print("Installing missing dependencies...")
         subprocess.check_call([
@@ -53,32 +53,23 @@ ensure_dependencies()
 # ---------------------------
 # 1. Core Imports
 # ---------------------------
-import os
 import logging
 import asyncpg
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 from datetime import datetime
+from dataclasses import dataclass
 
-# Pyrogram Components
-from pyrogram import Client, filters, idle
-from pyrogram.types import Message
-from pyrogram.handlers import MessageHandler
-
-# Rest of your application code follows the previous structure...
-# ---------------------------
-# 2. Structured Imports
-# ---------------------------
 # Standard Library
-from datetime import datetime
 from contextlib import contextmanager
 
 # Third-Party
 from pyrogram import Client, filters, idle
-from pyrogram.types import Message, InlineKeyboardMarkup
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+from pyrogram.enums import ParseMode
 
 # ---------------------------
-# 3. Configuration Management
+# 2. Configuration Management
 # ---------------------------
 @dataclass(frozen=True)
 class Config:
@@ -87,9 +78,10 @@ class Config:
     BOT_TOKEN: str = "7227094800:AAHoegjcwXUFOgeJbLnxnwbKKeRjHT4Ba5A"
     POSTGRES_URI: str = "postgres://avnadmin:AVNS_DLTo9WK_5HYei9Xu9SY@pg-3efabe4d-anup-84fe.g.aivencloud.com:14318/defaultdb?sslmode=require"
     POOL_SIZE: int = 15
+    ADMINS: list[int] = [6656275515]  # Add admin user IDs here
 
 # ---------------------------
-# 4. State Management
+# 3. State Management
 # ---------------------------
 class AppState:
     db_pool: Optional[asyncpg.pool.Pool] = None
@@ -97,7 +89,7 @@ class AppState:
     feature_flags: dict[str, bool] = {"maintenance_mode": False}
 
 # ---------------------------
-# 5. Utility Classes
+# 4. Utility Classes
 # ---------------------------
 class DatabaseManager:
     @staticmethod
@@ -116,38 +108,76 @@ class DateTimeUtils:
         return datetime.utcnow().isoformat()
 
 # ---------------------------
-# 6. Custom Filters
+# 5. Custom Filters
 # ---------------------------
 class CustomFilters:
-    admin_only = filters.create(lambda _, __, m: m.from_user.id in ADMINS)
-    rate_limit = filters.create(lambda _, __, ___: check_rate_limit())
+    admin_only = filters.create(lambda _, __, m: m.from_user and m.from_user.id in Config.ADMINS)
+    # Example rate limit (not implemented, but placeholder)
+    # rate_limit = filters.create(lambda _, __, ___: check_rate_limit())
 
 # ---------------------------
-# 7. Middleware Framework
+# 6. Middleware Framework
 # ---------------------------
 class Middleware:
     @staticmethod
-    async def db_connector(_, client: Client, call: Callable, **kwargs):
-        kwargs["db"] = DatabaseManager
-        return await call(client, **kwargs)
+    async def db_connector(client: Client, update, next_handler):
+        async with AppState.db_pool.acquire() as conn:
+            try:
+               return await next_handler(client, update, conn)  # Pass conn to handler
+            except Exception as e:
+                logging.error(f"Database error in handler: {e}")
 
     @staticmethod
-    async def error_handler(_, client: Client, call: Callable, **kwargs):
+    async def error_handler(client: Client, update, next_handler):
         try:
-            return await call(client, **kwargs)
-        except asyncpg.PostgresError as e:
-            logging.error(f"Database error: {str(e)}")
+            return await next_handler(client, update)
+        except Exception as e:
+            logging.exception(f"Error in handler: {e}") # Use exception to log traceback
+            if isinstance(update, Message):
+                await update.reply_text(f"An error occurred: {e}")
 
 # ---------------------------
-# 8. UI Components
+# 7. UI Components
 # ---------------------------
 class KeyboardBuilder:
     @staticmethod
     def main_menu() -> InlineKeyboardMarkup:
-        return InlineKeyboardMarkup([[("📊 Stats", "stats")]])
+        return InlineKeyboardMarkup([[InlineKeyboardButton("📊 Stats", callback_data="stats")]])
 
-class TemplateManager:
+class TemplateManager:  #Consider moving to separate file if it gets large
     WELCOME_MSG = "Welcome {name}! Your account was created on {date}"
+
+# ---------------------------
+# 8. Handler Functions
+# ---------------------------
+
+# --- 8.A. Start Handler ---
+async def handle_start(client: Client, message: Message, conn):
+    user = message.from_user
+    await DatabaseManager.execute(
+        """INSERT INTO users (id, username, created_at)
+        VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE
+        SET username = EXCLUDED.username""",
+        user.id, user.username, DateTimeUtils.iso_format()
+    )
+
+    welcome_text = (
+        f"[🌚](https://envs.sh/taC.jpg) ˹ᴅᴇɪꜰɪᴇᴅ ʙᴇɪɴɢ˼ **{user.first_name}** . . .\n\n"
+        f"**ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ** 〄 **ʟᴜɴᴅᴍᴀᴛᴇ ᴜx** 〄 – **ᴛʜᴇ ᴜʟᴛɪᴍᴀᴛᴇ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ ʙᴏᴛ ғᴏʀ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘs.**\n"
+        f"**ᴇxᴘʟᴏʀᴇ ᴍʏ ғᴇᴀᴛᴜʀᴇs ᴡɪᴛʜ** /help **ᴀɴᴅ ᴇɴʜᴀɴᴄᴇ ʏᴏᴜʀ ᴇxᴘᴇʀɪᴇɴᴄᴇ.**"
+    )
+    await message.reply_text(welcome_text, disable_web_page_preview=False)
+
+# --- 8.B. Stats Handler ---
+async def handle_stats(client: Client, callback_query, conn):
+    count = await DatabaseManager.fetch("SELECT COUNT(*) FROM users")
+    await callback_query.answer(f"Total users: {count[0]['count']}")
+
+# --- 8.C. Handler Wrapper (for middleware) ---
+async def message_handler_wrapper(handler_func):
+    async def wrapper(client: Client, update, *args):
+        return await handler_func(client, update, *args)
+    return wrapper
 
 # ---------------------------
 # 9. Client Initialization
@@ -156,81 +186,51 @@ app = Client(
     name="pg_bot",
     api_id=Config.API_ID,
     api_hash=Config.API_HASH,
-    bot_token=Config.BOT_TOKEN
+    bot_token=Config.BOT_TOKEN,
+    parse_mode=ParseMode.MARKDOWN
 )
 
 # ---------------------------
-# 10. Handler Setup
+# 10. Lifecycle Management
 # ---------------------------
-@app.on_message(filters.command("start") & filters.private)
-async def handle_start(client: Client, message: Message):
-    user = message.from_user
-    await DatabaseManager.execute(
-        """INSERT INTO users (id, username, created_at)
-        VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE
-        SET username = EXCLUDED.username""",
-        user.id, user.username, DateTimeUtils.iso_format()
-    )
-    await message.reply(TemplateManager.WELCOME_MSG.format(
-        name=user.first_name,
-        date=DateTimeUtils.iso_format()
-    ))
-
-@app.on_callback_query(filters.regex("^stats$"))
-async def handle_stats(client: Client, callback_query):
-    count = await DatabaseManager.fetch("SELECT COUNT(*) FROM users")
-    await callback_query.answer(f"Total users: {count[0]['count']}")
-
-# ---------------------------
-# 11. Error Handling
-# ---------------------------
-@app.on_errors()
-async def global_error_handler(client: Client, error: Exception):
-    logging.error(f"Unhandled exception: {str(error)}")
-    await client.send_message(ADMINS[0], f"🚨 Error: {str(error)}")
-
-# ---------------------------
-# 12. Lifecycle Management
-# ---------------------------
-@app.on_start()
-async def initialize_db(client: Client):
+@app.on_startup()
+async def startup_event(client: Client):
+    logging.info("Starting up...")
     AppState.db_pool = await asyncpg.create_pool(
         dsn=Config.POSTGRES_URI,
         min_size=5,
         max_size=Config.POOL_SIZE
     )
-    await DatabaseManager.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id BIGINT PRIMARY KEY,
-            username TEXT,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-    """)
-
-@app.on_stop()
-async def cleanup_resources(client: Client):
-    if AppState.db_pool:
-        await AppState.db_pool.close()
-    logging.info("Resources cleaned up successfully")
+    async with AppState.db_pool.acquire() as conn:
+      await conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id BIGINT PRIMARY KEY,
+                username TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+      """)
+    logging.info("Database pool initialized and tables checked/created.")
 
 # ---------------------------
-# 13. Main Execution
+# 11. Handler Registration
+# ---------------------------
+app.add_handler(MessageHandler(message_handler_wrapper(handle_start), filters.command("start") & filters.private))
+app.add_handler(CallbackQueryHandler(message_handler_wrapper(handle_stats), filters.regex("^stats$")))
+
+# ---------------------------
+# 12. Main Execution
 # ---------------------------
 if __name__ == "__main__":
-    # Environment validation
-    required = [Config.API_ID, Config.API_HASH, Config.BOT_TOKEN]
-    if not all(required):
-        raise EnvironmentError("Missing required configuration values")
-    
-    # Configure logging
+    # Environment Validation
+    required_config_vars = [Config.API_ID, Config.API_HASH, Config.BOT_TOKEN, Config.POSTGRES_URI]
+    if not all(required_config_vars):
+        raise EnvironmentError("Missing required configuration values (API_ID, API_HASH, BOT_TOKEN, POSTGRES_URI)")
+
+    # Logging Configuration
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Register middleware
-    app.add_middleware(Middleware.db_connector)
-    app.add_middleware(Middleware.error_handler)
-
-    # Start application
+    # Start Application
     app.run()
