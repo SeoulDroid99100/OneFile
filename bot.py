@@ -196,7 +196,7 @@ if __name__ == "__main__":
         await startup_event()
         await register_handlers()
         try:
-            await app.start()
+            await app.run()
             await idle()
         except Exception as e:
             logging.exception("An error occurred during bot startup:")
