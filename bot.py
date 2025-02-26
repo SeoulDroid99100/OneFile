@@ -149,9 +149,6 @@ app = Client(
 # ---------------------------
 # 10. Lifecycle Management
 # ---------------------------
-#ERROR HERE: app.on_startup doesn't exist
-#@app.on_startup()
-#async def startup_event(client: Client):
 async def startup_event(): # Remove the decorator, no need for client argument
     logging.info("Starting up...")
     AppState.db_pool = await asyncpg.create_pool(  # Correctly create the pool
@@ -172,9 +169,11 @@ async def startup_event(): # Remove the decorator, no need for client argument
 # ---------------------------
 # 11. Handler Registration
 # ---------------------------
-# Correctly adding handlers.  Middleware usage is excellent.
-app.add_handler(MessageHandler(message_handler_wrapper(handle_start), filters.command("start") & filters.private))
-app.add_handler(CallbackQueryHandler(message_handler_wrapper(handle_stats), filters.regex("^stats$")))
+# Corrected handler registration:
+async def register_handlers():
+  app.add_handler(MessageHandler(await message_handler_wrapper(handle_start), filters.command("start") & filters.private))
+  app.add_handler(CallbackQueryHandler(await message_handler_wrapper(handle_stats), filters.regex("^stats$")))
+
 
 # ---------------------------
 # 12. Main Execution
@@ -191,6 +190,10 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"  # Good log format
     )
 
-    # Start Application
-    #app.run() # Incorrect
-    app.run(startup_event()) # Pass the async function
+    async def main():
+        await startup_event()
+        await register_handlers()  # Await handler registration
+        await app.start()
+        await idle()
+
+    asyncio.run(main()) # Use asyncio.run to start the event loop
