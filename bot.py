@@ -1,4 +1,16 @@
-# -*- coding: utf-8 -*-
+ - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    async def main():
+        await startup_event()
+        await register_handlers()
+        try:
+            await app.start()
+            await idle()
+        except Exception as e:
+            logging.exception("An error occurred during bot startup:")
+
+    asyncio.ru# -*- coding: utf-8 -*-
 """
 Pyrogram Bot  (No Auto Dependency Management)
 Version: 3.11
@@ -118,9 +130,9 @@ async def handle_start(client: Client, message: Message, conn):
     )
 
     welcome_text = (
-        f"[🌚](https://envs.sh/taC.jpg) ˹ᴅᴇɪꜰɪᴇᴅ ʙᴇɪɴɢ˼ **{user.first_name}** . . .\n\n"
-        f"**ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ** 〄 **ʟᴜɴᴅᴍᴀᴛᴇ ᴜx** 〄 – **ᴛʜᴇ ᴜʟᴛɪᴍᴀᴛᴇ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ ʙᴏᴛ ғᴏʀ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘs.**\n"
-        f"**ᴇxᴘʟᴏʀᴇ ᴍʏ ғᴇᴀᴛᴜʀᴇs ᴡɪᴛʜ** /help **ᴀɴᴅ ᴇɴʜᴀɴᴄᴇ ʏᴏᴜʀ ᴇxᴘᴇʀɪᴇɴᴄᴇ.**"
+        f"[🌚](https://envs.sh/taC.jpg) ⅅⅇⱥⱱⅈⱥⅇ Ᏸⅇⅈ—**{user.first_name}** . . .\n\n"
+        f"**Ⅽ𝓌ⲉ𝓁𝒸𝑜ⲙ𝑒 𝓉𝑜**  ⸀ **ℒ𝓤ⓝ𝓓ⲘⲀⲈ 𝓔𝔁** ⸀ – **𝓉𝒽𝑒 Ⓤℓ𝓉ⅈⱥⅇ𝓉 𝓂𝒶𝓃𝒶𝑔𝑒𝓂ⅇⲛ𝓉 Ᏸ𝑜𝓉 𝓉𝑜 𝓉ⅈ𝓅 𝓉𝒽𝑒 𝓈𝓉𝒶𝓉𝓈 𝓅𝓇𝑜𝓋ⅈⅈ𝒹ⅇ𝓇𝓈**\n"
+        f"**𝓔𝔁𝓅𝓁𝑜𝓇ⅇ 𝑚𝓎 𝒻𝑒𝒶𝓉𝓊𝓇ⅇ𝓈 𝓌ⅈ𝓉𝒽** /help **𝒶𝓃𝒹 𝑒𝓃𝒽𝒶𝓃𝒸𝑒 𝓎𝑜𝓊𝓇 𝑒𝓍𝓅𝑒𝓇ⅈⅇ𝓃𝒸𝑒.**"
     )
     await message.reply_text(welcome_text, disable_web_page_preview=False)
 
@@ -132,7 +144,6 @@ async def message_handler_wrapper(handler_func):
     async def wrapper(client: Client, update, *args):
         return await handler_func(client, update, *args)
     return wrapper
-
 
 
 # ---------------------------
